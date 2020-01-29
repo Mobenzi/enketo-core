@@ -159,41 +159,29 @@ class Filepicker extends Widget {
                 event.target.dataset.filenamePostfix = postfix;
                 fileName = getFilename( file, postfix );
 
-                // Process the file
-                // Resize the file. Currently will resize an image.
-                this._resizeFile( file, that.props.mediaType )
-                    .then( resizedFile => {
-                        // Put information in file element that file is resized
-                        // Put resizedDataURI that will be used by fileManager.getCurrentFiles to get blob synchronously
-                        event.target.dataset.resized = true;
-                        event.target.dataset.resizedDataURI = resizedFile.dataURI;
-                        file = resizedFile.blob;
+                // Process the file                
+                fileManager.getFileUrl( file, fileName )
+                    .then( url => {
+                        // Update UI
+                        that._showPreview( url, that.props.mediaType );
+                        that._showFeedback();
+                        that._showFileName( fileName );
+                        if ( loadedFileName && loadedFileName !== fileName ) {
+                            that.element.removeAttribute( 'data-loaded-file-name' );
+                        }
+                        that._updateDownloadLink( url, fileName );
+                        // Update record
+                        $( that.element ).trigger( 'change.propagate' );
                     } )
-                    .catch( () => {} )
-                    .finally( () => {
-                        fileManager.getFileUrl( file, fileName )
-                            .then( url => {
-                                // Update UI
-                                that._showPreview( url, that.props.mediaType );
-                                that._showFeedback();
-                                that._showFileName( fileName );
-                                if ( loadedFileName && loadedFileName !== fileName ) {
-                                    that.element.removeAttribute( 'data-loaded-file-name' );
-                                }
-                                that._updateDownloadLink( url, fileName );
-                                // Update record
-                                $( that.element ).trigger( 'change.propagate' );
-                            } )
-                            .catch( error => {
-                                // Update record to clear any existing valid value
-                                $( that.element ).val( '' ).trigger( 'change.propagate' );
-                                // Update UI
-                                that._showFileName( '' );
-                                that._showPreview( null );
-                                that._showFeedback( error, 'error' );
-                                that._updateDownloadLink( '', '' );
-                            } );
-                    } );
+                    .catch( error => {
+                        // Update record to clear any existing valid value
+                        $( that.element ).val( '' ).trigger( 'change.propagate' );
+                        // Update UI
+                        that._showFileName( '' );
+                        that._showPreview( null );
+                        that._showFeedback( error, 'error' );
+                        that._updateDownloadLink( '', '' );
+                    } );                    
             } );
 
         this.fakeInput.addEventListener( 'click', event => {
